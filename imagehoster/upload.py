@@ -18,7 +18,11 @@ class ImageUploader:
         self.username = username
         self.posting_wif = posting_wif
 
-    def checksum(self, filename, ):
+    def checksum(self, filename):
+        """
+        This function creates a binary sha256 digest with the
+        image concatenated with the imageSigningChallenge.
+        """
         sha256 = hashlib.sha256()
         image_data = open(filename, 'rb').read()
         sha256.update(self.CHALLENGE)
@@ -29,8 +33,8 @@ class ImageUploader:
         private_key = PrivateKey(self.posting_wif)
         sk = ecdsa.SigningKey.from_string(bytes(private_key),
                                           curve=ecdsa.SECP256k1)
-
         digest, image_content = self.checksum(image_path)
+
         signature = sk.sign_digest(digest)
         signature_in_hex = hexlify(
             struct.pack("<B", 31) + signature
@@ -65,9 +69,11 @@ def cli():
     )
 
     resp = image_uploader.upload(args.image_path)
+    # in success scenario, api endpoint returns 'url' in response json.
     if 'url' in resp:
         print("File uploaded: %s" % resp["url"])
     else:
+        # there must be something wrong.
         print(resp)
 
 
